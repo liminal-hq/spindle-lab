@@ -4,13 +4,11 @@
 // SPDX-License-Identifier: MIT
 
 mod env;
-// Scaffolding for future lab commands (see docs/plan.md §5) — nothing returns
-// an `Error` yet, so it is otherwise dead code until the first lab needs it.
-#[allow(dead_code)]
 mod error;
 mod labs;
 
 use env::lab_env_check;
+use labs::svg::commands::svg_import;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -18,7 +16,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             // Shell-wide commands
             lab_env_check,
-            // Labs: none registered yet — the SVG Lab's `svg_*` commands land in M2.
+            // SVG Lab commands (docs/plan.md §5) — import lands in M2; render/mux
+            // commands are added in later milestones.
+            svg_import,
         ])
         // Official Tauri v2 plugins
         .plugin(tauri_plugin_opener::init())

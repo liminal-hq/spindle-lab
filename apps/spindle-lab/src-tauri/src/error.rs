@@ -15,6 +15,12 @@ pub enum Error {
 
     #[error("JSON serialisation error: {0}")]
     Json(#[from] serde_json::Error),
+
+    #[error("XML parsing error: {0}")]
+    Xml(#[from] quick_xml::Error),
+
+    #[error("{0}")]
+    InvalidSvg(String),
 }
 
 impl Serialize for Error {

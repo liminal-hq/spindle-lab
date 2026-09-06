@@ -1,0 +1,35 @@
+.svg-lab {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+	height: 100%;
+	overflow: auto;
+}
+
+.svg-lab__toolbar {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+}
+
+.svg-lab__source-path {
+	font-family: var(--font-mono);
+	font-size: var(--text-xs);
+	color: var(--text-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.svg-lab__content {
+	display: grid;
+	grid-template-columns: minmax(280px, 360px) 1fr;
+	gap: var(--space-4);
+	flex: 1;
+	min-height: 0;
+}
+
+.svg-lab__preview,
+.svg-lab__preview-blocked {
+	min-height: 0;
+}

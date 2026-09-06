@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+	<!-- SMIL animateMotion: a dot travelling along an explicit path. -->
+	<path
+		id="track"
+		d="M 10,80 C 10,10 90,10 90,80"
+		fill="none"
+		stroke="#7c8796"
+		stroke-dasharray="2 3"
+	/>
+	<circle r="6" fill="#f43f5e">
+		<animateMotion dur="2.5s" repeatCount="indefinite">
+			<mpath href="#track" />
+		</animateMotion>
+	</circle>
+</svg>
