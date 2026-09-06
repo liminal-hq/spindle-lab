@@ -2,19 +2,19 @@
 
 ## 0. Summary of the opinionated calls
 
-| Question | Decision |
-| --- | --- |
-| Repo shape | pnpm workspace + Cargo workspace, `apps/spindle-lab` + `crates/` (empty in v1), mirroring Spindle rather than haptics-lab |
-| Lab isolation | Folder convention only (`src/labs/<id>/` + `src-tauri/src/labs/<id>/`). No plugin crates, no per-lab packages in v1 |
-| Routing | Hand-rolled registry + `location.hash`, no router library (Spindle's own `ROUTES` map precedent; its `@tanstack/react-router` dep is unused) |
-| State | zustand, one store per lab + one shell store |
+| Question                  | Decision                                                                                                                                                       |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Repo shape                | pnpm workspace + Cargo workspace, `apps/spindle-lab` + `crates/` (empty in v1), mirroring Spindle rather than haptics-lab                                      |
+| Lab isolation             | Folder convention only (`src/labs/<id>/` + `src-tauri/src/labs/<id>/`). No plugin crates, no per-lab packages in v1                                            |
+| Routing                   | Hand-rolled registry + `location.hash`, no router library (Spindle's own `ROUTES` map precedent; its `@tanstack/react-router` dep is unused)                   |
+| State                     | zustand, one store per lab + one shell store                                                                                                                   |
 | SMIL seek for **capture** | Declarative time-shift bake: rewrite `begin` by `−t`, force `end="0s" fill="freeze"`. Not `setCurrentTime` + serialize (that silently captures t=0 — see §4.2) |
-| CSS seek for **capture** | Live paused instance + `getAnimations()`/`getKeyframes()` → inline resolved computed values with `!important`, then `animation: none` |
-| Live preview | Sandboxed `<iframe sandbox="allow-same-origin">` (no `allow-scripts`), driven by `pauseAnimations()`/`setCurrentTime()`/`getAnimations()` |
-| Rasterisation | Baked standalone SVG → `Blob` → `new Image()` → `await img.decode()` → `drawImage` onto a fixed-size 2D canvas |
-| Frame handoff | JS writes numbered PNGs via `@tauri-apps/plugin-fs` into a Rust-allocated session dir. No base64, no stdin piping in v1 |
-| Mux | Rust `Command::new("ffmpeg")` on system PATH (Spindle precedent), image2 demuxer, `-progress pipe:2` streaming |
-| JS-driven SVG | Detected and **refused** with a clear message in v1 |
+| CSS seek for **capture**  | Live paused instance + `getAnimations()`/`getKeyframes()` → inline resolved computed values with `!important`, then `animation: none`                          |
+| Live preview              | Sandboxed `<iframe sandbox="allow-same-origin">` (no `allow-scripts`), driven by `pauseAnimations()`/`setCurrentTime()`/`getAnimations()`                      |
+| Rasterisation             | Baked standalone SVG → `Blob` → `new Image()` → `await img.decode()` → `drawImage` onto a fixed-size 2D canvas                                                 |
+| Frame handoff             | JS writes numbered PNGs via `@tauri-apps/plugin-fs` into a Rust-allocated session dir. No base64, no stdin piping in v1                                        |
+| Mux                       | Rust `Command::new("ffmpeg")` on system PATH (Spindle precedent), image2 demuxer, `-progress pipe:2` streaming                                                 |
+| JS-driven SVG             | Detected and **refused** with a clear message in v1                                                                                                            |
 
 ---
 
@@ -170,11 +170,11 @@ A lab is **a registry entry plus a folder**. Nothing else.
 ```ts
 // src/shell/types.ts
 export interface LabDefinition {
-	id: string;                    // hash route segment, e.g. 'svg'
-	title: string;                 // 'SVG Lab'
-	blurb: string;                 // one line for the sidebar tooltip / empty state
-	icon: React.ReactNode;         // inline 16x16 svg, Spindle's ICONS style
-	status: 'active' | 'stub';     // sidebar badge; keeps half-built labs honest
+	id: string; // hash route segment, e.g. 'svg'
+	title: string; // 'SVG Lab'
+	blurb: string; // one line for the sidebar tooltip / empty state
+	icon: React.ReactNode; // inline 16x16 svg, Spindle's ICONS style
+	status: 'active' | 'stub'; // sidebar badge; keeps half-built labs honest
 	Component: React.ComponentType;
 }
 
@@ -214,7 +214,10 @@ Rust does this rather than JS because it needs filesystem access to sibling asse
 Render the inlined SVG text into:
 
 ```html
-<iframe sandbox="allow-same-origin" srcdoc="<!doctype html><html><body style='margin:0'>…svg…</body></html>" />
+<iframe
+	sandbox="allow-same-origin"
+	srcdoc="<!doctype html><html><body style='margin:0'>…svg…</body></html>"
+/>
 ```
 
 - `allow-same-origin` **without** `allow-scripts`: the parent can reach `iframe.contentDocument`, but any `<script>` in a malicious SVG cannot run. This is the correct isolation boundary for arbitrary imported content, and it is why `withGlobalTauri` is off.
@@ -226,7 +229,7 @@ Render the inlined SVG text into:
 
 The user's stated seek APIs are correct and this is where they belong: **the preview**.
 
-### 4.3 The critical correction: seek-then-serialise does *not* capture the animated state
+### 4.3 The critical correction: seek-then-serialise does _not_ capture the animated state
 
 This needs to be called out because the obvious implementation is silently wrong.
 
@@ -236,7 +239,7 @@ Two mechanisms fix it, each chosen where it is strongest.
 
 **(a) SMIL — declarative time shift, computed by the browser's own SMIL engine.**
 
-For target time `t`, on a *clone* of the parsed document:
+For target time `t`, on a _clone_ of the parsed document:
 
 - For each SMIL element (`animate`, `animateTransform`, `animateMotion`, `set`, `animateColor`): rewrite each **offset-valued** `begin` clock value `b` to `b − t`. Leave syncbase (`other.end+1s`) and event begins alone — they resolve relative to the already-shifted bases, so a uniform shift propagates correctly.
 - Set `end="0s"` and `fill="freeze"` on every animation element (taking `min(existing_end − t, 0)` where an explicit `end` exists).
@@ -248,7 +251,7 @@ This delegates all the hard interpolation (`keyTimes`, `calcMode="spline"`, `val
 
 **(b) CSS `@keyframes` — resolved-value inlining.**
 
-Attribute shifting does not work for CSS, but WAAPI hands us exactly what is needed on the *live paused* instance:
+Attribute shifting does not work for CSS, but WAAPI hands us exactly what is needed on the _live paused_ instance:
 
 1. Seek the live iframe document to `t` and pause everything.
 2. For each `anim` in `doc.getAnimations()`: `target = anim.effect.target`, and `props = new Set(anim.effect.getKeyframes().flatMap(Object.keys))` minus `offset`/`easing`/`composite`.
@@ -280,7 +283,7 @@ Gotchas, resolved:
 
 - **Blob URL, not data URL.** Data URLs mean base64-encoding the whole SVG per frame, and some engines cap URL length. Blob URLs are same-origin so the canvas is not tainted; revoke every frame or memory climbs.
 - **`img.decode()`, not `onload`.** `onload` can fire before the image is decodable, and `drawImage` then draws nothing. `decode()` also gives a real rejection to surface as an error.
-- **External refs do not load.** SVG referenced by `<img>` runs in the "SVG image" sandbox: no scripts, no external resource fetches. This is exactly why §4.1 inlines images at import — a `<image href="logo.png">` that renders perfectly in the preview will be *blank* in the bake if not inlined. This asymmetry between preview and bake is the single most likely source of "why doesn't my video match" bugs, which is what the parity view (§6, M4) exists to catch.
+- **External refs do not load.** SVG referenced by `<img>` runs in the "SVG image" sandbox: no scripts, no external resource fetches. This is exactly why §4.1 inlines images at import — a `<image href="logo.png">` that renders perfectly in the preview will be _blank_ in the bake if not inlined. This asymmetry between preview and bake is the single most likely source of "why doesn't my video match" bugs, which is what the parity view (§6, M4) exists to catch.
 - **Fonts.** System font families resolve normally in SVG-as-image. Webfonts via external `@font-face` URLs do not. v1 warns; inlining fonts as base64 is deferred.
 - **`<foreignObject>`** rendering in the image sandbox is inconsistent across engines. v1 warns rather than pretending.
 - **Colour space.** Canvas is sRGB; the PNGs are untagged sRGB. Tag the ffmpeg output explicitly (`-color_primaries bt709 -color_trc bt709 -colorspace bt709`) rather than leaving it unspecified, following Spindle's `dvd_colour_flags` habit. Do not rely on the player guessing.
@@ -321,7 +324,7 @@ svg_render_session_mux(sessionId, muxOptions) -> RenderResult
 
 - Base64 over `invoke` costs ~1.37× inflation plus JSON string escaping on both sides. At 1080p PNG (~1–4 MB/frame) × 300 frames that is over a gigabyte of string churn through the IPC bridge, and it stalls the webview's main thread. Rejected.
 - Raw-body `invoke` (Tauri v2 `ArrayBuffer` → `tauri::ipc::Request` with `InvokeBody::Raw`, frame index carried in a header) avoids the inflation and is the right answer if fs scoping becomes painful. Document it as the fallback; do not build it in v1.
-- Piping into a long-lived `ffmpeg` stdin still moves every byte over the same IPC bridge, so it does not fix the bottleneck — it only removes the disk write, and it costs a stateful child-process handle plus a much worse failure mode. Its real benefit (no intermediate files) is a *disadvantage* for a lab, where inspecting `frame_000042.png` is a primary debugging tool.
+- Piping into a long-lived `ffmpeg` stdin still moves every byte over the same IPC bridge, so it does not fix the bottleneck — it only removes the disk write, and it costs a stateful child-process handle plus a much worse failure mode. Its real benefit (no intermediate files) is a _disadvantage_ for a lab, where inspecting `frame_000042.png` is a primary debugging tool.
 - Loose PNGs also let a stalled or crashed run be resumed or muxed manually from a shell, which matters when the whole point is to characterise the technique.
 
 Expected cost at 1080p: PNG encode dominates at roughly 30–80 ms/frame, so ~150 frames is a few seconds to ~15 s. Acceptable. A "raw RGBA" fast path (`getImageData` → `.raw` files → `ffmpeg -f rawvideo -pix_fmt rgba -s WxH`) is a documented deferred optimisation — much faster, but 8.3 MB/frame at 1080p.
@@ -341,11 +344,11 @@ ffmpeg -y
 
 Codec presets exposed in v1:
 
-| Preset | Args | Use |
-| --- | --- | --- |
-| H.264 MP4 (default) | as above | general preview / sharing |
-| Lossless FFV1 MKV | `-c:v ffv1 -level 3 -g 1 -pix_fmt bgr0` | intermediate for further processing |
-| Lossless QuickTime RLE | `-c:v qtrle -pix_fmt argb` | alpha-preserving (paired with `background: transparent`) |
+| Preset                 | Args                                    | Use                                                      |
+| ---------------------- | --------------------------------------- | -------------------------------------------------------- |
+| H.264 MP4 (default)    | as above                                | general preview / sharing                                |
+| Lossless FFV1 MKV      | `-c:v ffv1 -level 3 -g 1 -pix_fmt bgr0` | intermediate for further processing                      |
+| Lossless QuickTime RLE | `-c:v qtrle -pix_fmt argb`              | alpha-preserving (paired with `background: transparent`) |
 
 `-progress pipe:2` is injected by the runner and parsed for percentage, exactly as Spindle's `run_ffmpeg_command` does. **Port `apps/../executor/process.rs` structurally** — raw-byte stderr reads with lossy UTF-8 decode, block-aligned `out_time`/`speed` pairing, cancellation checked per line, throttled event emission. That code has real bug-fix history baked into its comments; reproducing it is cheaper than rediscovering it.
 
@@ -354,7 +357,7 @@ Loop repetition, when `loopCount > 1`, is a second pass: `ffmpeg -y -stream_loop
 ### 4.8 Result
 
 - Play in-app: `<video src={convertFileSrc(outputPath)} loop autoPlay controls>` — needs `assetProtocol.scope: ["$APPCACHE/**"]` and the `media-src` CSP entry above.
-- `svg_probe_output` runs `ffprobe -v error -show_streams -show_format -of json` and the panel shows codec, dimensions, `r_frame_rate`, `nb_frames`, duration and colour tags. For a lab this is the *verification*, not decoration — it is how you prove the output is actually 29.97 and actually bt709.
+- `svg_probe_output` runs `ffprobe -v error -show_streams -show_format -of json` and the panel shows codec, dimensions, `r_frame_rate`, `nb_frames`, duration and colour tags. For a lab this is the _verification_, not decoration — it is how you prove the output is actually 29.97 and actually bt709.
 - "Save as…" copies out of the cache via the dialog plugin; "Reveal" uses `tauri-plugin-opener`.
 - The exact ffmpeg argv is displayed and copyable. Same reasoning.
 
@@ -408,28 +411,28 @@ Events:
 Each stage ends with something demoable and a green `pnpm validate`.
 
 **M0 — Scaffold.** Workspace files, both toolchains pinned, prettier/eslint/tsconfig, `pnpm validate`, CI workflow against `ghcr.io/liminal-hq/tauri-ci-desktop:latest`, `AGENTS.md`/`CLAUDE.md`/`README.md`/`LICENSE`, licence headers.
-*Demo:* `pnpm validate` passes; `pnpm tauri dev` opens an empty window.
+_Demo:_ `pnpm validate` passes; `pnpm tauri dev` opens an empty window.
 
 **M1 — Labs shell.** Registry, sidebar, topbar, statusbar, hash routing, landing page, `lab_env_check`, a `sandbox` stub lab so multi-lab navigation is real from day one.
-*Demo:* switch between two labs; statusbar shows ffmpeg found/missing with the resolved path and version.
+_Demo:_ switch between two labs; statusbar shows ffmpeg found/missing with the resolved path and version.
 
 **M2 — Import + live preview.** `svg_import` with resource inlining and the feature report; sandboxed iframe preview; `FeatureReportPanel` surfacing warnings; script-bearing SVGs blocked with a clear message.
-*Demo:* open a SMIL SVG and a CSS SVG from `fixtures/`, both animate; open a scripted one and get a refusal, not a broken export.
+_Demo:_ open a SMIL SVG and a CSS SVG from `fixtures/`, both animate; open a scripted one and get a refusal, not a broken export.
 
 **M3 — Timeline + transport.** Duration derivation for both engines, `TransportBar` with play/pause/scrub/step, current-time readout in seconds and frames, fps selector.
-*Demo:* frame-step through an animation; the derived duration matches what the SVG actually does.
+_Demo:_ frame-step through an animation; the derived duration matches what the SVG actually does.
 
 **M4 — Baker + parity view.** `bake-smil.ts`, `bake-css.ts`, `rasterise.ts`, with vitest fixtures for the pure transforms. `BakeParityView`: a "Bake this frame" button showing the rasterised PNG beside the live preview at the same `t`.
-*Demo:* scrub anywhere, bake, and the two images agree. **This is the milestone that proves or kills the whole technique** — the external-ref and font asymmetries from §4.4 show up here or nowhere.
+_Demo:_ scrub anywhere, bake, and the two images agree. **This is the milestone that proves or kills the whole technique** — the external-ref and font asymmetries from §4.4 show up here or nowhere.
 
 **M5 — Capture.** `ExportSettingsPanel` (fps, duration, resolution + presets, loop mode, background), session begin, the frame loop with progress and cancel, frames on disk.
-*Demo:* capture produces N correctly-numbered PNGs; open the folder and flick through them.
+_Demo:_ capture produces N correctly-numbered PNGs; open the folder and flick through them.
 
 **M6 — Mux + result.** `build_mux_command` with Rust unit tests, the ported ffmpeg runner with streaming progress, `svg_probe_output`, `ResultPanel` with in-app playback, argv display, save/reveal, cleanup.
-*Demo:* SVG in, MP4 out, looping in the app, with ffprobe confirming the frame rate.
+_Demo:_ SVG in, MP4 out, looping in the app, with ffprobe confirming the frame rate.
 
 **M7 — Polish + findings.** Settings persistence via the store plugin, loop-count second pass, lossless/alpha presets, error surfaces, and `docs/svg-lab.md` written up as the actual answer to "should Spindle do this?" — with measurements, failure modes and a recommendation.
-*Demo:* a DVD-preset bake at 720×480 @ 29.97 that a motion-menu pipeline could consume.
+_Demo:_ a DVD-preset bake at 720×480 @ 29.97 that a motion-menu pipeline could consume.
 
 ---
 
@@ -473,15 +476,15 @@ Commit small hand-written SVGs under `fixtures/svg/`, one per mechanism, since t
 
 ## 9. Risks
 
-| Risk | Mitigation |
-| --- | --- |
-| Seek-then-serialise silently captures t=0 | Addressed by design (§4.3); M4's parity view is the check that catches any regression |
+| Risk                                                                                   | Mitigation                                                                                                                                                                      |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Seek-then-serialise silently captures t=0                                              | Addressed by design (§4.3); M4's parity view is the check that catches any regression                                                                                           |
 | SMIL `end="0s" fill="freeze"` semantics differ across WebKitGTK / WKWebView / WebView2 | M4 fixture suite covers each SMIL construct; the parity view makes divergence visible immediately. If one engine misbehaves, the native-snapshot rasteriser is the escape hatch |
-| External refs render in preview but vanish in the bake | Inlined at import (§4.1) and warned about when un-inlinable; parity view surfaces the rest |
-| PNG encode throughput | Accept for v1 (seconds, not minutes); raw RGBA path documented as the optimisation |
-| ffmpeg absent on the host | `lab_env_check` in the statusbar from M1; export disabled with an explanatory message rather than a spawn failure |
-| ffmpeg absent in CI | Unit-test `build_mux_command`'s argv only; any test that actually spawns ffmpeg is `#[ignore]`d |
-| Arbitrary SVG as a script vector | `withGlobalTauri: false`, explicit CSP, sandboxed iframe without `allow-scripts`, script detection refuses at import |
+| External refs render in preview but vanish in the bake                                 | Inlined at import (§4.1) and warned about when un-inlinable; parity view surfaces the rest                                                                                      |
+| PNG encode throughput                                                                  | Accept for v1 (seconds, not minutes); raw RGBA path documented as the optimisation                                                                                              |
+| ffmpeg absent on the host                                                              | `lab_env_check` in the statusbar from M1; export disabled with an explanatory message rather than a spawn failure                                                               |
+| ffmpeg absent in CI                                                                    | Unit-test `build_mux_command`'s argv only; any test that actually spawns ffmpeg is `#[ignore]`d                                                                                 |
+| Arbitrary SVG as a script vector                                                       | `withGlobalTauri: false`, explicit CSP, sandboxed iframe without `allow-scripts`, script detection refuses at import                                                            |
 
 ---
 

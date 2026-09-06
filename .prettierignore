@@ -1,0 +1,9 @@
+.claude
+dist
+dist-js
+node_modules
+coverage
+.pnpm-store
+target
+test-results
+pnpm-lock.yaml
