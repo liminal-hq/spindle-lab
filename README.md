@@ -1,5 +1,9 @@
 # Spindle Lab
 
+<p align="center">
+  <img src="assets/hero.svg" alt="Spindle Lab — Desktop laboratory for prototyping Spindle authoring techniques" width="100%">
+</p>
+
 Spindle Lab is a desktop laboratory app for prototyping and de-risking techniques before they land in [Spindle](https://github.com/liminal-hq/spindle), Liminal HQ's DVD/Blu-ray authoring studio. It is built with the same stack — Tauri v2, React, and Rust — so findings translate directly.
 
 ## The labs concept
