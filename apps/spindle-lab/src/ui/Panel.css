@@ -1,0 +1,19 @@
+.ui-panel {
+	background: var(--bg-panel);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-card);
+	padding: var(--space-4);
+}
+
+.ui-panel__title {
+	font-family: var(--font-heading);
+	font-weight: 600;
+	font-size: var(--text-md);
+	margin-bottom: var(--space-3);
+}
+
+.ui-panel__body {
+	color: var(--text-secondary);
+	font-size: var(--text-sm);
+}

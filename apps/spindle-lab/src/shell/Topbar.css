@@ -1,0 +1,25 @@
+.topbar {
+	grid-area: topbar;
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	padding: 0 var(--space-4);
+	background: var(--bg-panel);
+	border-bottom: 1px solid var(--border-subtle);
+	font-size: var(--text-sm);
+	-webkit-app-region: drag;
+}
+
+.topbar__app-name {
+	font-family: var(--font-heading);
+	font-weight: 600;
+	color: var(--text-primary);
+}
+
+.topbar__separator {
+	color: var(--text-muted);
+}
+
+.topbar__lab-title {
+	color: var(--text-secondary);
+}

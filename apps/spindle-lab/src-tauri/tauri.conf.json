@@ -1,0 +1,52 @@
+{
+	"$schema": "https://schema.tauri.app/config/2",
+	"productName": "Spindle Lab",
+	"version": "0.1.0",
+	"identifier": "ca.liminalhq.spindle-lab",
+	"build": {
+		"beforeDevCommand": "pnpm dev",
+		"devUrl": "http://localhost:1420",
+		"beforeBuildCommand": "pnpm build",
+		"frontendDist": "../dist"
+	},
+	"app": {
+		"withGlobalTauri": false,
+		"windows": [
+			{
+				"title": "Spindle Lab",
+				"width": 1360,
+				"height": 900,
+				"minWidth": 1024,
+				"minHeight": 700
+			}
+		],
+		"security": {
+			"csp": "default-src 'self'; img-src 'self' blob: data: asset: http://asset.localhost; media-src 'self' blob: asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-src 'self' blob:; connect-src 'self' ipc: http://ipc.localhost",
+			"assetProtocol": { "enable": true, "scope": ["$APPCACHE/**"] }
+		}
+	},
+	"bundle": {
+		"active": true,
+		"targets": "all",
+		"linux": {
+			"deb": {
+				"depends": ["ffmpeg"]
+			},
+			"rpm": {
+				"recommends": ["(ffmpeg or ffmpeg-free)"]
+			}
+		},
+		"category": "Video",
+		"publisher": "Liminal HQ",
+		"shortDescription": "A desktop laboratory for prototyping Spindle authoring techniques.",
+		"longDescription": "Spindle Lab is a desktop laboratory app built with Tauri, Rust, and React for prototyping and de-risking techniques before they land in Spindle, Liminal HQ's DVD/Blu-ray authoring studio.",
+		"copyright": "Copyright 2026 Liminal HQ, Scott Morris",
+		"icon": [
+			"icons/32x32.png",
+			"icons/128x128.png",
+			"icons/128x128@2x.png",
+			"icons/icon.icns",
+			"icons/icon.ico"
+		]
+	}
+}

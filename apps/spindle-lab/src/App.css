@@ -1,0 +1,33 @@
+/* App shell grid layout, matching Spindle's design system. */
+
+.app-shell {
+	display: grid;
+	grid-template-rows: var(--topbar-height) 1fr var(--statusbar-height);
+	grid-template-columns: var(--sidebar-width) 1fr;
+	grid-template-areas:
+		'topbar  topbar'
+		'sidebar main'
+		'status  status';
+	height: 100vh;
+	overflow: hidden;
+}
+
+.main-content {
+	grid-area: main;
+	overflow-y: auto;
+	padding: var(--space-6);
+	animation: fade-in 0.2s ease;
+}
+
+.landing {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-6);
+	max-width: 640px;
+}
+
+.landing__lab-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}
