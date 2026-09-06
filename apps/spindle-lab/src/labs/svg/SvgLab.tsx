@@ -1,16 +1,18 @@
-// SVG Lab page composition: import + a live, sandboxed preview (docs/plan.md
-// §4, M2). Timeline/transport (M3), baking (M4), capture (M5), and mux (M6)
-// are later milestones and are not built here.
+// SVG Lab page composition: import, a live sandboxed preview, and the
+// transport bar (docs/plan.md §4, M2 + M3). Baking (M4), capture (M5), and
+// mux (M6) are later milestones and are not built here.
 //
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: MIT
 
 import { open } from '@tauri-apps/plugin-dialog';
+import { useCallback, useState } from 'react';
 import { Button } from '../../ui/Button';
 import { Panel } from '../../ui/Panel';
 import { useSvgLabStore } from './svg-lab-store';
 import { FeatureReportPanel } from './components/FeatureReportPanel';
 import { SvgPreviewFrame } from './components/SvgPreviewFrame';
+import { TransportBar } from './components/TransportBar';
 import './SvgLab.css';
 
 export function SvgLab() {
@@ -18,6 +20,11 @@ export function SvgLab() {
 	const loading = useSvgLabStore((s) => s.loading);
 	const error = useSvgLabStore((s) => s.error);
 	const importFile = useSvgLabStore((s) => s.importFile);
+
+	// `SvgPreviewFrame` hands back its iframe's `contentDocument` once loaded;
+	// TransportBar needs it to drive play/pause/scrub (docs/plan.md §4.2).
+	const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
+	const handlePreviewReady = useCallback((doc: Document | null) => setPreviewDoc(doc), []);
 
 	async function handlePick() {
 		const selected = await open({
@@ -53,7 +60,8 @@ export function SvgLab() {
 						</Panel>
 					) : (
 						<div className="svg-lab__preview">
-							<SvgPreviewFrame svgText={result.text} />
+							<SvgPreviewFrame svgText={result.text} onReady={handlePreviewReady} />
+							<TransportBar doc={previewDoc} />
 						</div>
 					)}
 				</div>

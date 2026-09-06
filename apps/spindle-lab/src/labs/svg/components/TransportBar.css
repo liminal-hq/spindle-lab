@@ -1,0 +1,75 @@
+.transport-bar__row {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--space-3);
+	margin-bottom: var(--space-3);
+}
+
+.transport-bar__row:last-child {
+	margin-bottom: 0;
+}
+
+.transport-bar__readout {
+	font-family: var(--font-mono);
+	font-size: var(--text-sm);
+	color: var(--text-secondary);
+}
+
+.transport-bar__scrub {
+	width: 100%;
+	margin-bottom: var(--space-3);
+}
+
+.transport-bar__field {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	font-size: var(--text-sm);
+	color: var(--text-secondary);
+}
+
+.transport-bar__field input[type='number'] {
+	width: 5.5rem;
+	font-family: var(--font-mono);
+}
+
+.transport-bar__field input,
+.transport-bar__field select {
+	background: var(--bg-card);
+	color: var(--text-primary);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-sm);
+	padding: var(--space-1) var(--space-2);
+	font-size: var(--text-sm);
+}
+
+.transport-bar__badge {
+	font-size: var(--text-xs);
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.transport-bar__derived-value {
+	font-family: var(--font-mono);
+	font-size: var(--text-xs);
+	color: var(--text-muted);
+}
+
+.transport-bar__custom-fps {
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+	font-family: var(--font-mono);
+}
+
+.transport-bar__custom-fps input {
+	width: 4.5rem;
+	background: var(--bg-card);
+	color: var(--text-primary);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-sm);
+	padding: var(--space-1) var(--space-2);
+	font-size: var(--text-sm);
+}

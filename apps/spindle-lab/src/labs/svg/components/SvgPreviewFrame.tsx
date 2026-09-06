@@ -5,12 +5,19 @@
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: MIT
 
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import './SvgPreviewFrame.css';
 
 interface SvgPreviewFrameProps {
 	/** The already-inlined SVG text from `svg_import` -- see docs/plan.md §4.1. */
 	svgText: string;
+	/**
+	 * Called with the iframe's `contentDocument` once it (re)loads, and with
+	 * `null` on unmount. `allow-same-origin` (see below) is what makes this
+	 * document reachable at all; TransportBar (M3) uses it to drive
+	 * play/pause/scrub against the live SMIL and WAAPI engines.
+	 */
+	onReady?: (doc: Document | null) => void;
 }
 
 /**
@@ -20,7 +27,9 @@ interface SvgPreviewFrameProps {
  * for the transport controls added in M3, but any `<script>` smuggled into
  * the imported SVG cannot execute. Do not add `allow-scripts`.
  */
-export function SvgPreviewFrame({ svgText }: SvgPreviewFrameProps) {
+export function SvgPreviewFrame({ svgText, onReady }: SvgPreviewFrameProps) {
+	const iframeRef = useRef<HTMLIFrameElement>(null);
+
 	const srcDoc = useMemo(
 		() =>
 			[
@@ -45,10 +54,12 @@ export function SvgPreviewFrame({ svgText }: SvgPreviewFrameProps) {
 
 	return (
 		<iframe
+			ref={iframeRef}
 			className="svg-preview-frame"
 			title="SVG preview"
 			sandbox="allow-same-origin"
 			srcDoc={srcDoc}
+			onLoad={() => onReady?.(iframeRef.current?.contentDocument ?? null)}
 		/>
 	);
 }

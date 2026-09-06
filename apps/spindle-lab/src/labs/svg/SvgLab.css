@@ -33,3 +33,14 @@
 .svg-lab__preview-blocked {
 	min-height: 0;
 }
+
+.svg-lab__preview {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}
+
+.svg-lab__preview .svg-preview-frame {
+	flex: 1;
+	min-height: 0;
+}
