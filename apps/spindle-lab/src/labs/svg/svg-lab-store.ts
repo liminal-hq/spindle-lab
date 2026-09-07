@@ -7,10 +7,15 @@
 import { create } from 'zustand';
 import { importSvg } from './import';
 import { FPS_PRESETS, type Fps, type LoopMode } from './timeline';
-import type { SvgImportResult } from './types';
+import type { OutputCodec, RenderProgressEvent, RenderResult, SvgImportResult } from './types';
 
 const DEFAULT_FPS: Fps = FPS_PRESETS.find((preset) => preset.label.startsWith('29.97'))!.fps;
 const DEFAULT_DURATION_SECONDS = 5.0;
+const DEFAULT_EXPORT_WIDTH = 720;
+const DEFAULT_EXPORT_HEIGHT = 480;
+
+/** The M5/M6 capture-and-mux pipeline's current phase (docs/plan.md §4.6-§4.8). */
+export type CapturePhase = 'idle' | 'capturing' | 'muxing' | 'done' | 'cancelled' | 'error';
 
 interface SvgLabState {
 	result: SvgImportResult | null;
@@ -34,6 +39,35 @@ interface SvgLabState {
 	setLoopMode: (mode: LoopMode) => void;
 	setDerivedDurationSecs: (seconds: number) => void;
 	setDurationOverrideSecs: (seconds: number | null) => void;
+
+	// Export/capture settings (docs/plan.md §4.6, M5). fps/duration/loopMode
+	// above are shared with the transport bar -- a single source of truth,
+	// per docs/plan.md's "same fps/duration/loopMode state" design.
+	exportWidth: number;
+	exportHeight: number;
+	background: 'transparent' | string;
+	codec: OutputCodec;
+	loopCount: number;
+	setExportSize: (width: number, height: number) => void;
+	setBackground: (background: 'transparent' | string) => void;
+	setCodec: (codec: OutputCodec) => void;
+	setLoopCount: (loopCount: number) => void;
+
+	// Capture/mux pipeline state (docs/plan.md §4.6-§4.8, M5/M6).
+	captureSessionId: string | null;
+	capturePhase: CapturePhase;
+	captureFramesDone: number;
+	captureFrameTotal: number;
+	captureError: string | null;
+	muxProgress: RenderProgressEvent | null;
+	renderResult: RenderResult | null;
+	beginCapture: (sessionId: string, frameTotal: number) => void;
+	setCaptureProgress: (framesDone: number, frameTotal: number) => void;
+	setCapturePhase: (phase: CapturePhase) => void;
+	setCaptureError: (message: string) => void;
+	setMuxProgress: (progress: RenderProgressEvent | null) => void;
+	setRenderResult: (result: RenderResult | null) => void;
+	resetCapture: () => void;
 }
 
 /** The duration actually driving playback: the override if set, else the derived value, else the flat default (docs/plan.md §4.5). */
@@ -52,13 +86,33 @@ const initialPlaybackState = {
 	durationOverrideSecs: null as number | null,
 };
 
+const initialExportState = {
+	exportWidth: DEFAULT_EXPORT_WIDTH,
+	exportHeight: DEFAULT_EXPORT_HEIGHT,
+	background: 'transparent' as 'transparent' | string,
+	codec: 'h264-mp4' as OutputCodec,
+	loopCount: 1,
+};
+
+const initialCaptureState = {
+	captureSessionId: null as string | null,
+	capturePhase: 'idle' as CapturePhase,
+	captureFramesDone: 0,
+	captureFrameTotal: 0,
+	captureError: null as string | null,
+	muxProgress: null as RenderProgressEvent | null,
+	renderResult: null as RenderResult | null,
+};
+
 export const useSvgLabStore = create<SvgLabState>((set) => ({
 	result: null,
 	loading: false,
 	error: null,
 	...initialPlaybackState,
+	...initialExportState,
+	...initialCaptureState,
 	importFile: async (path: string) => {
-		set({ loading: true, error: null, ...initialPlaybackState });
+		set({ loading: true, error: null, ...initialPlaybackState, ...initialCaptureState });
 		try {
 			const result = await importSvg(path);
 			set({ result, loading: false });
@@ -73,4 +127,27 @@ export const useSvgLabStore = create<SvgLabState>((set) => ({
 	setLoopMode: (loopMode) => set({ loopMode }),
 	setDerivedDurationSecs: (seconds) => set({ derivedDurationSecs: seconds }),
 	setDurationOverrideSecs: (seconds) => set({ durationOverrideSecs: seconds }),
+
+	setExportSize: (width, height) => set({ exportWidth: width, exportHeight: height }),
+	setBackground: (background) => set({ background }),
+	setCodec: (codec) => set({ codec }),
+	setLoopCount: (loopCount) => set({ loopCount }),
+
+	beginCapture: (sessionId, frameTotal) =>
+		set({
+			captureSessionId: sessionId,
+			capturePhase: 'capturing',
+			captureFramesDone: 0,
+			captureFrameTotal: frameTotal,
+			captureError: null,
+			muxProgress: null,
+			renderResult: null,
+		}),
+	setCaptureProgress: (framesDone, frameTotal) =>
+		set({ captureFramesDone: framesDone, captureFrameTotal: frameTotal }),
+	setCapturePhase: (phase) => set({ capturePhase: phase }),
+	setCaptureError: (message) => set({ capturePhase: 'error', captureError: message }),
+	setMuxProgress: (progress) => set({ muxProgress: progress }),
+	setRenderResult: (result) => set({ renderResult: result }),
+	resetCapture: () => set({ ...initialCaptureState }),
 }));

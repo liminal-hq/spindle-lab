@@ -6,9 +6,13 @@
 mod env;
 mod error;
 mod labs;
+mod process;
 
 use env::lab_env_check;
-use labs::svg::commands::svg_import;
+use labs::svg::commands::{
+    svg_import, svg_probe_output, svg_render_save_as, svg_render_session_begin,
+    svg_render_session_cancel, svg_render_session_cleanup, svg_render_session_mux,
+};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -17,9 +21,15 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             // Shell-wide commands
             lab_env_check,
-            // SVG Lab commands (docs/plan.md §5) — import lands in M2; render/mux
-            // commands are added in later milestones.
+            // SVG Lab commands (docs/plan.md §5) — import (M2), capture
+            // session lifecycle + mux + ffprobe verification (M5/M6).
             svg_import,
+            svg_render_session_begin,
+            svg_render_session_mux,
+            svg_render_session_cancel,
+            svg_render_session_cleanup,
+            svg_probe_output,
+            svg_render_save_as,
         ])
         // Official Tauri v2 plugins
         .plugin(tauri_plugin_opener::init())
