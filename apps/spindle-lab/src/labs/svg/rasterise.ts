@@ -74,19 +74,31 @@ export function resolveViewBox(root: SvgRootLike): ViewBox {
 /**
  * `'fit'` (default): `preserveAspectRatio="xMidYMid meet"` -- the content
  * letterboxes/pillarboxes, undistorted and centred, when the export aspect
- * ratio differs from the source's. `'stretch'`:
- * `preserveAspectRatio="none"` -- the content fills the export raster
- * exactly, distorting if the aspect ratios differ. This is a direct,
- * one-line mapping onto SVG's own `preserveAspectRatio` spec -- the browser
- * does the actual scaling work either way. See docs/plan.md's DVD MPEG-2
- * section: this is a third axis orthogonal to both resolution and
+ * ratio differs from the source's -- some of the export raster is left
+ * empty (background-filled). `'fill'`: `preserveAspectRatio="xMidYMid
+ * slice"` -- the content is scaled to *cover* the export raster completely
+ * (no empty space on either axis), cropping whatever overflows the
+ * non-limiting axis, undistorted -- the SVG-native equivalent of CSS
+ * `background-size: cover`. `'stretch'`: `preserveAspectRatio="none"` --
+ * the content fills the export raster exactly, distorting if the aspect
+ * ratios differ. This is a direct, one-line mapping onto SVG's own
+ * `preserveAspectRatio` spec for every mode -- the browser does the actual
+ * scaling (and, for `'fill'`, cropping) work. See docs/plan.md's DVD
+ * MPEG-2 section: this is a third axis orthogonal to both resolution and
  * `AspectRatio` (`dvd.ts`) -- it answers "how does the source map into the
  * raster", not "how should a player display the raster's pixels".
  */
-export type FitMode = 'fit' | 'stretch';
+export type FitMode = 'fit' | 'fill' | 'stretch';
 
 function preserveAspectRatioForFitMode(fitMode: FitMode): string {
-	return fitMode === 'stretch' ? 'none' : 'xMidYMid meet';
+	switch (fitMode) {
+		case 'stretch':
+			return 'none';
+		case 'fill':
+			return 'xMidYMid slice';
+		case 'fit':
+			return 'xMidYMid meet';
+	}
 }
 
 /**

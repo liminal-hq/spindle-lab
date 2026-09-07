@@ -13,7 +13,7 @@ import { Button } from '../../../ui/Button';
 import { Panel } from '../../../ui/Panel';
 import { cleanupRenderSession, probeOutput, saveRenderAs } from '../render';
 import { useSvgLabStore } from '../svg-lab-store';
-import type { ProbeReport } from '../types';
+import type { OutputCodec, ProbeReport } from '../types';
 import './ResultPanel.css';
 
 // Upper bound for the blob-URL video fallback below: the whole file is
@@ -23,6 +23,18 @@ import './ResultPanel.css';
 // `VIDEO_PREVIEW_BLOB_CAP_BYTES` (`SceneCanvas.tsx`'s `BackgroundVideo`),
 // the precedent this whole fallback is ported from.
 const VIDEO_PREVIEW_BLOB_CAP_BYTES = 512 * 1024 * 1024;
+
+// Codecs a browser's <video> element can actually decode. This is not a
+// loading-mechanism problem the asset-protocol/blob fallback below can ever
+// solve -- MPEG-2 in an MPEG-PS container (`mpeg2-dvd`) simply isn't a
+// web-playable format at all, in any browser, regardless of how the bytes
+// arrive. FFV1 and QuickTime RLE are lossless intermediates for further
+// processing, not meant for casual in-app preview either -- H.264 is the
+// only preset that's actually reliable here. Skipping the <video> element
+// entirely for an unsupported codec also avoids the blob fallback wastefully
+// fetching a potentially large file into memory for a preview that was never
+// going to decode.
+const WEB_PLAYABLE_CODECS: ReadonlySet<OutputCodec> = new Set(['h264-mp4']);
 
 export function ResultPanel() {
 	const sessionId = useSvgLabStore((s) => s.captureSessionId);
@@ -110,6 +122,8 @@ export function ResultPanel() {
 	}, [blobSrc]);
 
 	if (renderResult == null) return null;
+
+	const previewSupported = WEB_PLAYABLE_CODECS.has(renderResult.codec);
 
 	function handleVideoError() {
 		if (!retriedRef.current) {
@@ -229,7 +243,13 @@ export function ResultPanel() {
 
 	return (
 		<Panel title="Result" className="result-panel">
-			{loadFailed ? (
+			{!previewSupported ? (
+				<div className="result-panel__video-placeholder">
+					Preview unavailable — browsers can&rsquo;t play this codec back directly. Use Reveal or
+					Save as&hellip; to open it in an external player; the ffprobe report below confirms the
+					file itself is valid.
+				</div>
+			) : loadFailed ? (
 				<div className="result-panel__video-placeholder">Preview unavailable</div>
 			) : (
 				<video

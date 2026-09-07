@@ -82,6 +82,8 @@ export interface RenderResult {
 	durationSecs: number;
 	ffmpegCommand: string[];
 	log: string;
+	/** The codec actually used -- see `ResultPanel.tsx`'s `WEB_PLAYABLE_CODECS`. */
+	codec: OutputCodec;
 }
 
 /** Mirrors Rust `probe::ProbeReport`, returned by `svg_probe_output`. */

@@ -108,4 +108,11 @@ describe('prepareSvgForRasterisation', () => {
 		const doc = new DOMParser().parseFromString(prepared, 'image/svg+xml');
 		expect(doc.documentElement.getAttribute('preserveAspectRatio')).toBe('none');
 	});
+
+	it('maps fitMode "fill" to xMidYMid slice (cover, crops, undistorted)', () => {
+		const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"></svg>`;
+		const prepared = prepareSvgForRasterisation(svg, 640, 480, 'fill');
+		const doc = new DOMParser().parseFromString(prepared, 'image/svg+xml');
+		expect(doc.documentElement.getAttribute('preserveAspectRatio')).toBe('xMidYMid slice');
+	});
 });

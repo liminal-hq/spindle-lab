@@ -301,6 +301,7 @@ export function ExportSettingsPanel() {
 						onChange={(event) => setFitMode(event.target.value as FitMode)}
 					>
 						<option value="fit">Fit (letterbox, undistorted)</option>
+						<option value="fill">Fill (cover, crops, undistorted)</option>
 						<option value="stretch">Stretch (fill, may distort)</option>
 					</select>
 				</label>
