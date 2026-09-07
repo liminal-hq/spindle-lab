@@ -30,5 +30,6 @@ tauri-plugin-fs = "2"
 tauri-plugin-store = "2"
 tauri-plugin-window-state = "2"
 tauri-plugin-log = "2"
+tauri-plugin-os = "2"
 tauri-plugin-persisted-scope = { version = "2", features = ["protocol-asset"] }
 log = "0.4"
