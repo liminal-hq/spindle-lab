@@ -3305,7 +3305,9 @@ dependencies = [
 name = "spindle-lab"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "log",
+ "quick-xml",
  "serde",
  "serde_json",
  "tauri",

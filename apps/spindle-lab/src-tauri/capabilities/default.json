@@ -18,6 +18,9 @@
 		"dialog:default",
 		"store:default",
 		"window-state:default",
-		"log:default"
+		"log:default",
+		{ "identifier": "fs:allow-write-file", "allow": [{ "path": "$APPCACHE/svg-lab/**" }] },
+		{ "identifier": "fs:allow-mkdir", "allow": [{ "path": "$APPCACHE/svg-lab/**" }] },
+		{ "identifier": "fs:allow-read-file", "allow": [{ "path": "$APPCACHE/svg-lab/**" }] }
 	]
 }

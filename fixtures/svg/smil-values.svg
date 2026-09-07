@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+	<!-- SMIL values/keyTimes/calcMode="spline": an eased bounce along x. -->
+	<circle cy="50" r="12" fill="#2ec66a">
+		<animate
+			attributeName="cx"
+			values="15;85;15"
+			keyTimes="0;0.5;1"
+			keySplines="0.42 0 0.58 1;0.42 0 0.58 1"
+			calcMode="spline"
+			dur="3s"
+			repeatCount="indefinite"
+		/>
+	</circle>
+</svg>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+	<!-- Both engines exercised at once: a SMIL rotation and a CSS colour fade. -->
+	<style>
+		@keyframes fade {
+			0% {
+				fill: #22d3ee;
+			}
+			100% {
+				fill: #f43f5e;
+			}
+		}
+		.fader {
+			animation: fade 1.5s ease-in-out infinite alternate;
+		}
+	</style>
+	<rect class="fader" x="30" y="30" width="40" height="40">
+		<animateTransform
+			attributeName="transform"
+			type="rotate"
+			from="0 50 50"
+			to="360 50 50"
+			dur="4s"
+			repeatCount="indefinite"
+		/>
+	</rect>
+</svg>
