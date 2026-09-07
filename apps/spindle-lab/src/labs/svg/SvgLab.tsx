@@ -10,6 +10,7 @@ import { useCallback, useState } from 'react';
 import { Button } from '../../ui/Button';
 import { Panel } from '../../ui/Panel';
 import { useSvgLabStore } from './svg-lab-store';
+import { BakeParityView } from './components/BakeParityView';
 import { FeatureReportPanel } from './components/FeatureReportPanel';
 import { SvgPreviewFrame } from './components/SvgPreviewFrame';
 import { TransportBar } from './components/TransportBar';
@@ -60,7 +61,10 @@ export function SvgLab() {
 						</Panel>
 					) : (
 						<div className="svg-lab__preview">
-							<SvgPreviewFrame svgText={result.text} onReady={handlePreviewReady} />
+							<div className="svg-lab__preview-row">
+								<SvgPreviewFrame svgText={result.text} onReady={handlePreviewReady} />
+								<BakeParityView result={result} previewDoc={previewDoc} />
+							</div>
 							<TransportBar doc={previewDoc} />
 						</div>
 					)}

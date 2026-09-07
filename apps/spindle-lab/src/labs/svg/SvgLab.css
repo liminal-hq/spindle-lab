@@ -40,7 +40,18 @@
 	gap: var(--space-3);
 }
 
-.svg-lab__preview .svg-preview-frame {
+.svg-lab__preview-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: var(--space-3);
 	flex: 1;
+	min-height: 0;
+}
+
+.svg-lab__preview-row .svg-preview-frame {
+	min-height: 0;
+}
+
+.svg-lab__preview-row .bake-parity-view {
 	min-height: 0;
 }

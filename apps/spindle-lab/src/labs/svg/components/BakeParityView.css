@@ -1,0 +1,67 @@
+.bake-parity-view {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.bake-parity-view__blurb {
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+	margin: 0 0 var(--space-3);
+}
+
+.bake-parity-view__controls {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	margin-bottom: var(--space-3);
+}
+
+.bake-parity-view__readout {
+	font-family: var(--font-mono);
+	font-size: var(--text-sm);
+	color: var(--text-secondary);
+}
+
+.bake-parity-view__error {
+	background: rgba(244, 63, 94, 0.12);
+	border: 1px solid var(--colour-error);
+	border-radius: var(--radius-sm);
+	color: var(--colour-error);
+	padding: var(--space-3);
+	margin-bottom: var(--space-3);
+	font-size: var(--text-sm);
+}
+
+.bake-parity-view__result {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-2);
+	flex: 1;
+	min-height: 0;
+	border: 1px dashed var(--border-subtle);
+	border-radius: var(--radius-sm);
+	padding: var(--space-3);
+	/* A neutral checkerboard-free light backing so a transparent-background
+	   bake's edges are still legible against the panel's own dark chrome. */
+	background: #ffffff;
+}
+
+.bake-parity-view__image {
+	max-width: 100%;
+	max-height: 100%;
+	object-fit: contain;
+}
+
+.bake-parity-view__caption {
+	font-family: var(--font-mono);
+	font-size: var(--text-xs);
+	color: #4b5563;
+}
+
+.bake-parity-view__placeholder {
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+	margin: auto;
+}
