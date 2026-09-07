@@ -1,25 +1,149 @@
+/* Topbar -- replaces the native title bar (tauri.conf.json's decorations: false).
+   Window control pattern from Threshold/Spindle. */
+
 .topbar {
 	grid-area: topbar;
+	height: var(--topbar-height);
 	display: flex;
 	align-items: center;
 	gap: var(--space-2);
-	padding: 0 var(--space-4);
-	background: var(--bg-panel);
+	padding: 0 var(--space-3);
+	background: var(--bg-sidebar);
 	border-bottom: 1px solid var(--border-subtle);
 	font-size: var(--text-sm);
-	-webkit-app-region: drag;
+	user-select: none;
+}
+
+.topbar.is-mac {
+	padding-left: 10px;
 }
 
 .topbar__app-name {
 	font-family: var(--font-heading);
 	font-weight: 600;
 	color: var(--text-primary);
+	flex-shrink: 0;
 }
 
 .topbar__separator {
 	color: var(--text-muted);
+	flex-shrink: 0;
 }
 
 .topbar__lab-title {
 	color: var(--text-secondary);
+	flex-shrink: 0;
+}
+
+.topbar__spacer {
+	flex: 1;
+	height: 100%;
+}
+
+/* ── Window Controls (from Threshold/Spindle) ────────────────────────────── */
+
+.window-controls {
+	display: flex;
+	align-items: center;
+	height: 100%;
+	flex-shrink: 0;
+}
+
+.control-button {
+	background: none;
+	border: none;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--text-secondary);
+	padding: 0;
+}
+
+/* Mac Traffic Lights */
+.window-controls.mac {
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.control-button.mac-close,
+.control-button.mac-minimize,
+.control-button.mac-maximize {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	padding: 0;
+	border: none;
+}
+
+.control-button.mac-close {
+	background-color: #ff5f56;
+}
+.control-button.mac-minimize {
+	background-color: #ffbd2e;
+}
+.control-button.mac-maximize {
+	background-color: #27c93f;
+}
+
+.control-button.mac-close:hover {
+	background-color: #e0443e;
+}
+.control-button.mac-minimize:hover {
+	background-color: #dea123;
+}
+.control-button.mac-maximize:hover {
+	background-color: #1aab29;
+}
+
+/* Windows Controls */
+.control-button.win-minimize,
+.control-button.win-maximize,
+.control-button.win-close {
+	width: 46px;
+	height: 100%;
+	color: var(--text-secondary);
+	opacity: 0.8;
+	border-radius: 0;
+}
+
+.control-button.win-minimize:hover,
+.control-button.win-maximize:hover {
+	background-color: rgba(255, 255, 255, 0.1);
+}
+
+.control-button.win-close:hover {
+	background-color: #e81123;
+	color: white;
+}
+
+/* Linux Controls (Adwaita-style) */
+.window-controls.linux {
+	gap: 6px;
+	padding-right: 8px;
+	flex-shrink: 0;
+}
+
+.control-button.linux-minimize,
+.control-button.linux-maximize,
+.control-button.linux-close {
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	color: var(--text-secondary);
+	background-color: transparent;
+	padding: 5px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.control-button.linux-minimize:hover,
+.control-button.linux-maximize:hover {
+	background-color: rgba(128, 128, 128, 0.15);
+}
+
+.control-button.linux-close:hover {
+	background-color: rgba(232, 17, 35, 0.8);
+	color: white;
 }

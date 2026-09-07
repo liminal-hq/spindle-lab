@@ -38,7 +38,8 @@ pub fn run() {
         .plugin(tauri_plugin_persisted_scope::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_window_state::Builder::default().build())
-        .plugin(tauri_plugin_log::Builder::new().build());
+        .plugin(tauri_plugin_log::Builder::new().build())
+        .plugin(tauri_plugin_os::init());
 
     // Dev-only agent-driving bridge -- never compiled into the plugin list for
     // a release build, and off by default even in debug builds (opt in with
