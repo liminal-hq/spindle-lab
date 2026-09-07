@@ -25,23 +25,21 @@ use crate::error::{Error, Result};
 pub const FRAME_PATTERN: &str = "frame_%06d.png";
 
 /// Mirrors docs/plan.md §5's `RenderRequest`. `width`/`height` describe the
-/// export raster (consumed by the frontend's own rasteriser, not by Rust);
-/// this module only needs `frame_count`/`fps_num`/`fps_den` to compute the
-/// capture's expected duration for mux progress percentages.
+/// export raster: consumed by the frontend's own rasteriser, and also read
+/// back on the Rust side at mux time to validate a DVD-legal request
+/// (`ffmpeg.rs`'s `validate_dvd_raster`) before it ever spawns ffmpeg.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RenderRequest {
-    // Round-tripped for the frontend's own use (the export raster it
-    // rasterises to, and a human-readable session label) but not read on
-    // the Rust side -- kept on the struct so both sides share the one
-    // `RenderRequest` shape from docs/plan.md §5's IPC surface.
-    #[allow(dead_code)]
     pub width: u32,
-    #[allow(dead_code)]
     pub height: u32,
     pub frame_count: u32,
     pub fps_num: u32,
     pub fps_den: u32,
+    // Round-tripped for the frontend's own use (a human-readable session
+    // label) but not read on the Rust side -- kept on the struct so both
+    // sides share the one `RenderRequest` shape from docs/plan.md §5's IPC
+    // surface.
     #[allow(dead_code)]
     pub label: String,
 }

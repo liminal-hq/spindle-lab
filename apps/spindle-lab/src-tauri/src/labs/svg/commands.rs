@@ -10,7 +10,7 @@ use std::sync::atomic::Ordering;
 use serde::Serialize;
 use tauri::AppHandle;
 
-use super::ffmpeg::{build_loop_command, build_mux_command, MuxOptions};
+use super::ffmpeg::{build_loop_command, build_mux_command, MuxOptions, OutputCodec};
 use super::import::{import_svg, SvgImportResult};
 use super::probe::{probe_output, ProbeReport};
 use super::session::{self, RenderRequest, RenderSession};
@@ -26,6 +26,12 @@ pub struct RenderResult {
     pub duration_secs: f64,
     pub ffmpeg_command: Vec<String>,
     pub log: String,
+    /// The codec actually used, so the frontend can decide whether in-app
+    /// `<video>` playback is even worth attempting (browsers only reliably
+    /// decode H.264 -- MPEG-2/DVD is not a web-playable format at all, and
+    /// the FFV1/QuickTime RLE lossless intermediates aren't meant for casual
+    /// preview either) without probing that the hard way.
+    pub codec: OutputCodec,
 }
 
 /// Reads and inspects an SVG file, inlining local raster references so the
@@ -104,7 +110,13 @@ pub fn svg_render_session_mux(
         output_path.clone()
     };
 
-    let mux_command = build_mux_command(&frames_dir, &options, &single_loop_path);
+    let mux_command = build_mux_command(
+        &frames_dir,
+        &options,
+        request.width,
+        request.height,
+        &single_loop_path,
+    )?;
     let mut log = run_ffmpeg_with_progress(
         &app,
         &session_id,
@@ -129,6 +141,7 @@ pub fn svg_render_session_mux(
         duration_secs,
         ffmpeg_command: mux_command,
         log,
+        codec: options.codec,
     })
 }
 

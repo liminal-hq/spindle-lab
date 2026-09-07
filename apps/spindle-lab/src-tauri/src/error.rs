@@ -33,6 +33,16 @@ pub enum Error {
 
     #[error("Unknown render session '{0}'.")]
     SessionNotFound(String),
+
+    #[error(
+        "DVD-legal MPEG-2 requires exactly 720x480 (NTSC) or 720x576 (PAL); got {width}x{height}."
+    )]
+    InvalidDvdRaster { width: u32, height: u32 },
+
+    #[error(
+        "DVD-legal MPEG-2 requires 29.97fps (30000/1001, NTSC) or 25fps (PAL); got {fps_num}/{fps_den}."
+    )]
+    InvalidDvdFrameRate { fps_num: u32, fps_den: u32 },
 }
 
 impl Serialize for Error {

@@ -6,8 +6,15 @@
 
 import { create } from 'zustand';
 import { importSvg } from './import';
+import type { FitMode } from './rasterise';
 import { FPS_PRESETS, type Fps, type LoopMode } from './timeline';
-import type { OutputCodec, RenderProgressEvent, RenderResult, SvgImportResult } from './types';
+import type {
+	AspectRatio,
+	OutputCodec,
+	RenderProgressEvent,
+	RenderResult,
+	SvgImportResult,
+} from './types';
 
 const DEFAULT_FPS: Fps = FPS_PRESETS.find((preset) => preset.label.startsWith('29.97'))!.fps;
 const DEFAULT_DURATION_SECONDS = 5.0;
@@ -48,10 +55,25 @@ interface SvgLabState {
 	background: 'transparent' | string;
 	codec: OutputCodec;
 	loopCount: number;
+	/** How the source SVG maps into the export raster (docs/plan.md's DVD MPEG-2 section). */
+	fitMode: FitMode;
+	/** `null` = don't force a DAR; see `types.ts`'s `AspectRatio` doc comment. */
+	aspectRatio: AspectRatio | null;
 	setExportSize: (width: number, height: number) => void;
 	setBackground: (background: 'transparent' | string) => void;
 	setCodec: (codec: OutputCodec) => void;
 	setLoopCount: (loopCount: number) => void;
+	setFitMode: (fitMode: FitMode) => void;
+	setAspectRatio: (aspectRatio: AspectRatio | null) => void;
+	/** Sets resolution + fps + codec + aspect + fit mode together, per an "Export preset" selection. */
+	applyExportPreset: (preset: {
+		width: number;
+		height: number;
+		fps: Fps;
+		codec: OutputCodec;
+		aspectRatio: AspectRatio | null;
+		fitMode: FitMode;
+	}) => void;
 
 	// Capture/mux pipeline state (docs/plan.md §4.6-§4.8, M5/M6).
 	captureSessionId: string | null;
@@ -92,6 +114,8 @@ const initialExportState = {
 	background: 'transparent' as 'transparent' | string,
 	codec: 'h264-mp4' as OutputCodec,
 	loopCount: 1,
+	fitMode: 'fit' as FitMode,
+	aspectRatio: null as AspectRatio | null,
 };
 
 const initialCaptureState = {
@@ -132,6 +156,17 @@ export const useSvgLabStore = create<SvgLabState>((set) => ({
 	setBackground: (background) => set({ background }),
 	setCodec: (codec) => set({ codec }),
 	setLoopCount: (loopCount) => set({ loopCount }),
+	setFitMode: (fitMode) => set({ fitMode }),
+	setAspectRatio: (aspectRatio) => set({ aspectRatio }),
+	applyExportPreset: (preset) =>
+		set({
+			exportWidth: preset.width,
+			exportHeight: preset.height,
+			fps: preset.fps,
+			codec: preset.codec,
+			aspectRatio: preset.aspectRatio,
+			fitMode: preset.fitMode,
+		}),
 
 	beginCapture: (sessionId, frameTotal) =>
 		set({

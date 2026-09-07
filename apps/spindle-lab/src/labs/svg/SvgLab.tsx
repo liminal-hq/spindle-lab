@@ -13,6 +13,7 @@ import { Panel } from '../../ui/Panel';
 import { ProgressBar } from '../../ui/ProgressBar';
 import { useSvgLabStore } from './svg-lab-store';
 import { runCaptureLoop } from './capture';
+import { dvdCaptureGuardMessage } from './dvd';
 import {
 	beginRenderSession,
 	cancelRenderSession,
@@ -39,6 +40,17 @@ export function SvgLab() {
 	const captureFrameTotal = useSvgLabStore((s) => s.captureFrameTotal);
 	const captureError = useSvgLabStore((s) => s.captureError);
 	const muxProgress = useSvgLabStore((s) => s.muxProgress);
+	const codec = useSvgLabStore((s) => s.codec);
+	const exportWidth = useSvgLabStore((s) => s.exportWidth);
+	const exportHeight = useSvgLabStore((s) => s.exportHeight);
+	const fps = useSvgLabStore((s) => s.fps);
+
+	// DVD-Video's raster/frame-rate legality (docs/plan.md's DVD MPEG-2
+	// section, `dvd.ts`): checked here to disable Capture *before* a doomed
+	// capture even starts, mirroring the Rust-side `validate_dvd_raster`/
+	// `dvd_tv_system_for_fps` source of truth that would otherwise only
+	// surface the problem after a failed mux.
+	const dvdGuardMessage = dvdCaptureGuardMessage(codec, exportWidth, exportHeight, fps);
 
 	// `SvgPreviewFrame` hands back its iframe's `contentDocument` once loaded;
 	// TransportBar needs it to drive play/pause/scrub (docs/plan.md §4.2),
@@ -84,6 +96,22 @@ export function SvgLab() {
 		if (result == null || previewDoc == null) return;
 
 		const store = useSvgLabStore.getState();
+
+		// Defence in depth: the Capture button below is already disabled
+		// while `dvdGuardMessage` is set, but the Rust layer is the actual
+		// source of truth (docs/plan.md's DVD MPEG-2 section), so this check
+		// is re-run here rather than trusted purely to the disabled button.
+		const guardMessage = dvdCaptureGuardMessage(
+			store.codec,
+			store.exportWidth,
+			store.exportHeight,
+			store.fps,
+		);
+		if (guardMessage != null) {
+			store.setCaptureError(guardMessage);
+			return;
+		}
+
 		const durationSecs = store.durationOverrideSecs ?? store.derivedDurationSecs ?? 5.0;
 		const frameCount = computeFrameCount(durationSecs, store.fps, store.loopMode);
 		if (frameCount <= 0) {
@@ -124,6 +152,7 @@ export function SvgLab() {
 			width: store.exportWidth,
 			height: store.exportHeight,
 			background: store.background,
+			fitMode: store.fitMode,
 			onProgress: (done, total) => useSvgLabStore.getState().setCaptureProgress(done, total),
 			isCancelled: () => cancelRequestedRef.current,
 		});
@@ -144,6 +173,7 @@ export function SvgLab() {
 				loopCount: store.loopCount,
 				outputPath: null,
 				crf: null,
+				aspectRatio: store.aspectRatio,
 			});
 			useSvgLabStore.getState().setRenderResult(muxResult);
 			useSvgLabStore.getState().setCapturePhase('done');
@@ -194,7 +224,9 @@ export function SvgLab() {
 									<Button
 										variant="primary"
 										onClick={handleStartCapture}
-										disabled={previewDoc == null || isCapturing || isMuxing}
+										disabled={
+											previewDoc == null || isCapturing || isMuxing || dvdGuardMessage != null
+										}
 									>
 										{isCapturing ? 'Capturing…' : isMuxing ? 'Muxing…' : 'Capture'}
 									</Button>
@@ -204,6 +236,11 @@ export function SvgLab() {
 										</Button>
 									)}
 								</div>
+								{dvdGuardMessage != null && (
+									<p className="svg-lab__capture-error" role="alert">
+										{dvdGuardMessage}
+									</p>
+								)}
 								{isCapturing && (
 									<ProgressBar
 										value={captureFramesDone}
