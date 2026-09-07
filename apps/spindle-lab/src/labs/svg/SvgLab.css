@@ -55,3 +55,20 @@
 .svg-lab__preview-row .bake-parity-view {
 	min-height: 0;
 }
+
+.svg-lab__capture-controls {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	margin-bottom: var(--space-3);
+}
+
+.svg-lab__capture-status {
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+}
+
+.svg-lab__capture-error {
+	color: var(--colour-error);
+	font-size: var(--text-sm);
+}
