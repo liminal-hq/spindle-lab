@@ -342,13 +342,14 @@ ffmpeg -y
   <output>.mp4
 ```
 
-Codec presets exposed in v1:
+Codec presets exposed in v1.1 (the fourth row, DVD MPEG-2, is v1.1's addition — see §4.9):
 
-| Preset                 | Args                                    | Use                                                      |
-| ---------------------- | --------------------------------------- | -------------------------------------------------------- |
-| H.264 MP4 (default)    | as above                                | general preview / sharing                                |
-| Lossless FFV1 MKV      | `-c:v ffv1 -level 3 -g 1 -pix_fmt bgr0` | intermediate for further processing                      |
-| Lossless QuickTime RLE | `-c:v qtrle -pix_fmt argb`              | alpha-preserving (paired with `background: transparent`) |
+| Preset                 | Args                                    | Use                                                       |
+| ---------------------- | --------------------------------------- | --------------------------------------------------------- |
+| H.264 MP4 (default)    | as above                                | general preview / sharing                                 |
+| Lossless FFV1 MKV      | `-c:v ffv1 -level 3 -g 1 -pix_fmt bgr0` | intermediate for further processing                       |
+| Lossless QuickTime RLE | `-c:v qtrle -pix_fmt argb`              | alpha-preserving (paired with `background: transparent`)  |
+| DVD MPEG-2             | see §4.9                                | DVD-legal output, consumable by Spindle's own build stage |
 
 `-progress pipe:2` is injected by the runner and parsed for percentage, exactly as Spindle's `run_ffmpeg_command` does. **Port `apps/../executor/process.rs` structurally** — raw-byte stderr reads with lossy UTF-8 decode, block-aligned `out_time`/`speed` pairing, cancellation checked per line, throttled event emission. That code has real bug-fix history baked into its comments; reproducing it is cheaper than rediscovering it.
 
@@ -360,6 +361,50 @@ Loop repetition, when `loopCount > 1`, is a second pass: `ffmpeg -y -stream_loop
 - `svg_probe_output` runs `ffprobe -v error -show_streams -show_format -of json` and the panel shows codec, dimensions, `r_frame_rate`, `nb_frames`, duration and colour tags. For a lab this is the _verification_, not decoration — it is how you prove the output is actually 29.97 and actually bt709.
 - "Save as…" copies out of the cache via the dialog plugin; "Reveal" uses `tauri-plugin-opener`.
 - The exact ffmpeg argv is displayed and copyable. Same reasoning.
+
+### 4.9 DVD MPEG-2 export, fit vs stretch, and aspect ratio (v1.1)
+
+§8 originally deferred "MPEG-2 / DVD-legal output" to v1.1. This is that work, shaped by real usage feedback on the plain-capture path §4.4–§4.8 describe: there was no MPEG-2 codec option at all, no way to choose stretch over fit, and no way to signal 4:3 vs 16:9.
+
+**The DVD-Video raster/aspect/fit model.** These are three independent axes, easy to conflate:
+
+- **Resolution** is the encoded pixel raster, and DVD-Video allows exactly two: 720×480 (NTSC) or 720×576 (PAL). There is no other legal size — not a suggestion, a hard spec constraint.
+- **Aspect ratio** (4:3 vs 16:9 anamorphic widescreen) does **not** change the raster. It is a player-side display hint carried in the stream's display-aspect-ratio (DAR) metadata — ffmpeg's `-aspect` output flag — telling the player how to stretch the same 720-wide pixels on screen. A 720×480 frame is 4:3 or 16:9 purely based on this flag, never based on picking different pixel dimensions.
+- **Fit vs stretch** (`FitMode` in `rasterise.ts`) answers a third, unrelated question: how does the _source SVG's own content_ map into the export raster during rasterisation. `'fit'` (default, unchanged from v1) sets `preserveAspectRatio="xMidYMid meet"` — the content letterboxes/pillarboxes, undistorted and centred, when the SVG's own aspect ratio differs from the export raster's. `'stretch'` sets `preserveAspectRatio="none"` — the content fills the raster exactly, distorting if the aspect ratios differ. This is a direct one-line mapping onto SVG's own `preserveAspectRatio` spec; the browser does the actual scaling.
+
+So a full DVD-legal request has all three set independently: e.g. resolution 720×480, aspect 16:9 (DAR flag), fit mode 'stretch' (a 16:9-authored SVG filling a 720×480 anamorphic frame with no letterbox bars).
+
+**The DVD MPEG-2 codec preset** (`OutputCodec::Mpeg2Dvd` in `ffmpeg.rs`), ported verbatim from Spindle's own proven numbers rather than reinvented — `plugins/tauri-plugin-spindle-project/src/build/ffmpeg.rs`'s `dvd_colour_flags()` and the motion-menu encode command documented in `docs/motion-menus.md`'s "Build Pipeline" section:
+
+```text
+-c:v mpeg2video -b:v 4000k -maxrate 7000k -bufsize 1835k
+-g 18|12                                    # 18 = NTSC (29.97fps), 12 = PAL (25fps)
+-flags +cgop -sc_threshold 1000000000       # closed GOPs; scene-cut detection must be off --
+                                             # mpeg2video can't combine closed GOPs with
+                                             # scene-change-triggered GOP breaks
+-color_primaries smpte170m|bt470bg          # smpte170m = NTSC, bt470bg = PAL
+-color_trc smpte170m|bt470bg
+-colorspace smpte170m|bt470bg
+-pix_fmt yuv420p -r <fps_num>/<fps_den>
+-f dvd -muxrate 10080000
+```
+
+No audio: this lab produces a video-only clip, exactly like the other three presets. Spindle's own build pipeline composes the audio bed separately when it later re-encodes this as a background asset (§4.5's motion-menu framing) — adding a silent track here would be pure waste.
+
+The TV system (NTSC vs PAL, which drives both `-g` and the colour tags) is derived from the mux request's `fps_num`/`fps_den` rather than a redundant separate codec variant, since `FPS_PRESETS` already distinguishes 29.97 from 25. `build_mux_command` now returns `Result<Vec<String>, Error>` rather than a bare `Vec<String>`: a `Mpeg2Dvd` request is rejected outright — `Error::InvalidDvdRaster` / `Error::InvalidDvdFrameRate` — if the raster isn't exactly 720×480/720×576 or the frame rate isn't exactly 29.97/25, rather than silently emitting a spec-violating file. `dvd.ts` mirrors this exact logic on the frontend (`isDvdLegalRaster`/`isDvdLegalFps`/`dvdCaptureGuardMessage`) so the Capture button disables itself with a clear message before a doomed capture even starts — Rust stays the actual source of truth; the frontend check is a courtesy.
+
+**`AspectRatio`** (`ffmpeg::AspectRatio` in Rust, `AspectRatio` in `types.ts`: `'four-three' | 'sixteen-nine'`) is threaded through `MuxOptions` as `aspect_ratio: Option<AspectRatio>`. `None` means "don't force a DAR" — the player derives it from the raster's own width:height. When set, `build_mux_command` appends `-aspect 4:3`/`-aspect 16:9` for **every** codec, not just `Mpeg2Dvd` — it's a harmless, meaningful flag for any container that supports it, so there's no reason to gate it to the DVD preset.
+
+**Export presets** (`ExportSettingsPanel.tsx`'s `EXPORT_PRESETS`, applied via the store's `applyExportPreset`) collapse "coordinate five independent fields into a DVD-legal combination" into one dropdown pick, following the exact preset-vs-custom pattern the panel already used for resolution and fps: selecting a preset sets resolution + fps + codec + aspect + fit mode together, the select falls back to "Custom" the moment any field no longer matches, and every field stays manually editable underneath.
+
+| Preset              | Resolution | FPS   | Codec     | Aspect | Fit |
+| ------------------- | ---------- | ----- | --------- | ------ | --- |
+| DVD NTSC            | 720×480    | 29.97 | mpeg2-dvd | 4:3    | fit |
+| DVD NTSC Widescreen | 720×480    | 29.97 | mpeg2-dvd | 16:9   | fit |
+| DVD PAL             | 720×576    | 25    | mpeg2-dvd | 4:3    | fit |
+| DVD PAL Widescreen  | 720×576    | 25    | mpeg2-dvd | 16:9   | fit |
+| Web (H.264 MP4)     | 1920×1080  | 30    | h264-mp4  | source | fit |
+| Custom              | —          | —     | —         | —      | —   |
 
 ---
 

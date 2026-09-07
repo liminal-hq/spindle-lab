@@ -6,9 +6,11 @@
 // (c) Copyright 2026 Liminal HQ, Scott Morris
 // SPDX-License-Identifier: MIT
 
+import { dvdCaptureGuardMessage } from '../dvd';
+import type { FitMode } from '../rasterise';
 import { effectiveDurationSecs, useSvgLabStore } from '../svg-lab-store';
-import { FPS_PRESETS, type LoopMode } from '../timeline';
-import type { OutputCodec } from '../types';
+import { FPS_PRESETS, type Fps, type LoopMode } from '../timeline';
+import type { AspectRatio, OutputCodec } from '../types';
 import { Panel } from '../../../ui/Panel';
 import './ExportSettingsPanel.css';
 
@@ -47,7 +49,78 @@ const CODEC_OPTIONS: { value: OutputCodec; label: string }[] = [
 	{ value: 'h264-mp4', label: 'H.264 MP4 (default)' },
 	{ value: 'ffv1-mkv', label: 'Lossless FFV1 MKV' },
 	{ value: 'qtrle-mov', label: 'Lossless QuickTime RLE (alpha)' },
+	{ value: 'mpeg2-dvd', label: 'MPEG-2 (DVD-legal)' },
 ];
+
+/**
+ * One-action shortcuts for a coherent resolution+fps+codec+aspect+fitMode
+ * combination, per docs/plan.md's DVD MPEG-2 section -- rather than making
+ * the user manually coordinate several independent fields into a
+ * DVD-legal set. Follows the same preset-vs-custom pattern as
+ * `RESOLUTION_PRESETS`/`FPS_PRESETS` above: selecting one sets every field
+ * in one action, but the manual fields underneath remain fully editable and
+ * the select falls back to "Custom" the moment any field is edited away
+ * from a match.
+ */
+interface ExportPreset {
+	label: string;
+	width: number;
+	height: number;
+	fps: Fps;
+	codec: OutputCodec;
+	aspectRatio: AspectRatio | null;
+	fitMode: FitMode;
+}
+
+const EXPORT_PRESETS: ExportPreset[] = [
+	{
+		label: 'DVD NTSC (720×480, MPEG-2)',
+		width: 720,
+		height: 480,
+		fps: { num: 30000, den: 1001 },
+		codec: 'mpeg2-dvd',
+		aspectRatio: 'four-three',
+		fitMode: 'fit',
+	},
+	{
+		label: 'DVD NTSC Widescreen (720×480, MPEG-2, 16:9)',
+		width: 720,
+		height: 480,
+		fps: { num: 30000, den: 1001 },
+		codec: 'mpeg2-dvd',
+		aspectRatio: 'sixteen-nine',
+		fitMode: 'fit',
+	},
+	{
+		label: 'DVD PAL (720×576, MPEG-2)',
+		width: 720,
+		height: 576,
+		fps: { num: 25, den: 1 },
+		codec: 'mpeg2-dvd',
+		aspectRatio: 'four-three',
+		fitMode: 'fit',
+	},
+	{
+		label: 'DVD PAL Widescreen (720×576, MPEG-2, 16:9)',
+		width: 720,
+		height: 576,
+		fps: { num: 25, den: 1 },
+		codec: 'mpeg2-dvd',
+		aspectRatio: 'sixteen-nine',
+		fitMode: 'fit',
+	},
+	{
+		label: 'Web (H.264 MP4)',
+		width: 1920,
+		height: 1080,
+		fps: { num: 30, den: 1 },
+		codec: 'h264-mp4',
+		aspectRatio: null,
+		fitMode: 'fit',
+	},
+];
+
+const CUSTOM_EXPORT_PRESET_LABEL = 'Custom';
 
 export function ExportSettingsPanel() {
 	const fps = useSvgLabStore((s) => s.fps);
@@ -66,6 +139,11 @@ export function ExportSettingsPanel() {
 	const setCodec = useSvgLabStore((s) => s.setCodec);
 	const loopCount = useSvgLabStore((s) => s.loopCount);
 	const setLoopCount = useSvgLabStore((s) => s.setLoopCount);
+	const fitMode = useSvgLabStore((s) => s.fitMode);
+	const setFitMode = useSvgLabStore((s) => s.setFitMode);
+	const aspectRatio = useSvgLabStore((s) => s.aspectRatio);
+	const setAspectRatio = useSvgLabStore((s) => s.setAspectRatio);
+	const applyExportPreset = useSvgLabStore((s) => s.applyExportPreset);
 	const capturePhase = useSvgLabStore((s) => s.capturePhase);
 
 	const disabled = capturePhase === 'capturing' || capturePhase === 'muxing';
@@ -84,8 +162,46 @@ export function ExportSettingsPanel() {
 
 	const matchingFps = FPS_PRESETS.find((p) => p.fps.num === fps.num && p.fps.den === fps.den);
 
+	const matchingExportPreset = EXPORT_PRESETS.find(
+		(preset) =>
+			preset.width === exportWidth &&
+			preset.height === exportHeight &&
+			preset.fps.num === fps.num &&
+			preset.fps.den === fps.den &&
+			preset.codec === codec &&
+			preset.aspectRatio === aspectRatio &&
+			preset.fitMode === fitMode,
+	);
+	const exportPresetSelectValue = matchingExportPreset?.label ?? CUSTOM_EXPORT_PRESET_LABEL;
+
+	function handleExportPresetChange(label: string) {
+		if (label === CUSTOM_EXPORT_PRESET_LABEL) return;
+		const preset = EXPORT_PRESETS.find((p) => p.label === label);
+		if (preset != null) applyExportPreset(preset);
+	}
+
+	const dvdGuardMessage = dvdCaptureGuardMessage(codec, exportWidth, exportHeight, fps);
+
 	return (
 		<Panel title="Export settings" className="export-settings-panel">
+			<div className="export-settings-panel__row">
+				<label className="export-settings-panel__field">
+					Export preset
+					<select
+						value={exportPresetSelectValue}
+						disabled={disabled}
+						onChange={(event) => handleExportPresetChange(event.target.value)}
+					>
+						{EXPORT_PRESETS.map((preset) => (
+							<option key={preset.label} value={preset.label}>
+								{preset.label}
+							</option>
+						))}
+						<option value={CUSTOM_EXPORT_PRESET_LABEL}>{CUSTOM_EXPORT_PRESET_LABEL}</option>
+					</select>
+				</label>
+			</div>
+
 			<div className="export-settings-panel__row">
 				<label className="export-settings-panel__field">
 					FPS
@@ -178,6 +294,36 @@ export function ExportSettingsPanel() {
 
 			<div className="export-settings-panel__row">
 				<label className="export-settings-panel__field">
+					Fit
+					<select
+						value={fitMode}
+						disabled={disabled}
+						onChange={(event) => setFitMode(event.target.value as FitMode)}
+					>
+						<option value="fit">Fit (letterbox, undistorted)</option>
+						<option value="stretch">Stretch (fill, may distort)</option>
+					</select>
+				</label>
+				<label className="export-settings-panel__field">
+					Aspect ratio
+					<select
+						value={aspectRatio ?? 'source'}
+						disabled={disabled}
+						onChange={(event) =>
+							setAspectRatio(
+								event.target.value === 'source' ? null : (event.target.value as AspectRatio),
+							)
+						}
+					>
+						<option value="source">Source (no forced DAR)</option>
+						<option value="four-three">4:3</option>
+						<option value="sixteen-nine">16:9 (anamorphic widescreen)</option>
+					</select>
+				</label>
+			</div>
+
+			<div className="export-settings-panel__row">
+				<label className="export-settings-panel__field">
 					Background
 					<select
 						value={background === 'transparent' ? 'transparent' : 'solid'}
@@ -235,6 +381,11 @@ export function ExportSettingsPanel() {
 			{background !== 'transparent' && codec === 'qtrle-mov' && (
 				<p className="export-settings-panel__hint">
 					QuickTime RLE preserves alpha -- pick a transparent background to actually use it.
+				</p>
+			)}
+			{dvdGuardMessage != null && (
+				<p className="export-settings-panel__hint export-settings-panel__hint--error" role="alert">
+					{dvdGuardMessage} Capture is disabled until the resolution and FPS match.
 				</p>
 			)}
 		</Panel>

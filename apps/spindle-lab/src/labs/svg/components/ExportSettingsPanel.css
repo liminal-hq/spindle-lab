@@ -62,3 +62,7 @@
 	font-size: var(--text-xs);
 	margin-top: var(--space-2);
 }
+
+.export-settings-panel__hint--error {
+	color: var(--colour-danger, var(--colour-warning));
+}

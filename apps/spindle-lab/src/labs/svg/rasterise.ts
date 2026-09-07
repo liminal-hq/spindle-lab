@@ -72,17 +72,36 @@ export function resolveViewBox(root: SvgRootLike): ViewBox {
 }
 
 /**
+ * `'fit'` (default): `preserveAspectRatio="xMidYMid meet"` -- the content
+ * letterboxes/pillarboxes, undistorted and centred, when the export aspect
+ * ratio differs from the source's. `'stretch'`:
+ * `preserveAspectRatio="none"` -- the content fills the export raster
+ * exactly, distorting if the aspect ratios differ. This is a direct,
+ * one-line mapping onto SVG's own `preserveAspectRatio` spec -- the browser
+ * does the actual scaling work either way. See docs/plan.md's DVD MPEG-2
+ * section: this is a third axis orthogonal to both resolution and
+ * `AspectRatio` (`dvd.ts`) -- it answers "how does the source map into the
+ * raster", not "how should a player display the raster's pixels".
+ */
+export type FitMode = 'fit' | 'stretch';
+
+function preserveAspectRatioForFitMode(fitMode: FitMode): string {
+	return fitMode === 'stretch' ? 'none' : 'xMidYMid meet';
+}
+
+/**
  * Prepares baked SVG text for rasterisation, per docs/plan.md §4.4: ensures
  * a `viewBox` (synthesising one from `width`/`height` if absent), then sets
- * explicit pixel `width`/`height` for the export target and
- * `preserveAspectRatio="xMidYMid meet"` so the content letterboxes rather
- * than stretching or clipping when the export aspect ratio differs from the
- * source's. Pure text-in/text-out, like `bake-smil.ts`.
+ * explicit pixel `width`/`height` for the export target and a
+ * `preserveAspectRatio` driven by `fitMode` (default `'fit'`, i.e. today's
+ * original letterboxing behaviour, unchanged). Pure text-in/text-out, like
+ * `bake-smil.ts`.
  */
 export function prepareSvgForRasterisation(
 	svgText: string,
 	exportWidth: number,
 	exportHeight: number,
+	fitMode: FitMode = 'fit',
 ): string {
 	const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
 	const parserError = doc.querySelector('parsererror');
@@ -102,7 +121,7 @@ export function prepareSvgForRasterisation(
 	}
 	root.setAttribute('width', String(exportWidth));
 	root.setAttribute('height', String(exportHeight));
-	root.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+	root.setAttribute('preserveAspectRatio', preserveAspectRatioForFitMode(fitMode));
 
 	return new XMLSerializer().serializeToString(doc);
 }
@@ -112,6 +131,8 @@ export interface RasteriseOptions {
 	height: number;
 	/** `'transparent'` (default) or any CSS colour string for a solid backing fill. */
 	background?: 'transparent' | string;
+	/** `'fit'` (default, letterbox/pillarbox) or `'stretch'` (fill, distorting). */
+	fitMode?: FitMode;
 }
 
 /**
@@ -130,8 +151,8 @@ export interface RasteriseOptions {
  * the manual Playwright verification that actually exercises this.
  */
 export async function rasteriseSvg(svgText: string, options: RasteriseOptions): Promise<Blob> {
-	const { width, height, background = 'transparent' } = options;
-	const prepared = prepareSvgForRasterisation(svgText, width, height);
+	const { width, height, background = 'transparent', fitMode = 'fit' } = options;
+	const prepared = prepareSvgForRasterisation(svgText, width, height, fitMode);
 
 	const blob = new Blob([prepared], { type: 'image/svg+xml;charset=utf-8' });
 	const url = URL.createObjectURL(blob);

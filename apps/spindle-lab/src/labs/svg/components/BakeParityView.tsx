@@ -123,7 +123,21 @@ export function BakeParityView({ result, previewDoc }: BakeParityViewProps) {
 			}
 
 			const { width, height } = choosePreviewSize(result.features);
-			const blob = await rasteriseSvg(text, { width, height, background: '#ffffff' });
+			// Deliberately not threaded from the export settings' `fitMode`:
+			// this is a diagnostic spot-check comparing baked-vs-live at the
+			// SOURCE's own aspect ratio (`choosePreviewSize` derives width/
+			// height from the SVG itself), not a preview of the export
+			// path -- there is no "stretch" to demonstrate when the preview
+			// raster already matches the source's aspect ratio, and pinning
+			// to 'fit' keeps this view's one job (does the baker agree with
+			// the live preview?) independent of whatever export settings the
+			// user happens to have picked.
+			const blob = await rasteriseSvg(text, {
+				width,
+				height,
+				background: '#ffffff',
+				fitMode: 'fit',
+			});
 			const url = URL.createObjectURL(blob);
 
 			if (imageUrlRef.current != null) URL.revokeObjectURL(imageUrlRef.current);

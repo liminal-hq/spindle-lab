@@ -52,8 +52,16 @@ export interface RenderSession {
 	framePattern: string;
 }
 
-/** The three v1 mux targets from docs/plan.md §4.7's table. */
-export type OutputCodec = 'h264-mp4' | 'ffv1-mkv' | 'qtrle-mov';
+/** The four v1.1 mux targets, per docs/plan.md's mux-target table (the DVD
+ * MPEG-2 section adds `mpeg2-dvd` to the original three). */
+export type OutputCodec = 'h264-mp4' | 'ffv1-mkv' | 'qtrle-mov' | 'mpeg2-dvd';
+
+/**
+ * DVD-Video's display-aspect-ratio signalling, mirroring Rust
+ * `ffmpeg::AspectRatio`. The encoded pixel raster never changes with this
+ * value -- see `dvd.ts`'s module doc comment for the full model.
+ */
+export type AspectRatio = 'four-three' | 'sixteen-nine';
 
 /** Mirrors Rust `ffmpeg::MuxOptions`, the argument to `svg_render_session_mux`. */
 export interface MuxOptions {
@@ -63,6 +71,8 @@ export interface MuxOptions {
 	loopCount: number;
 	outputPath?: string | null;
 	crf?: number | null;
+	/** `null`/omitted means "don't force a DAR" -- see `AspectRatio`'s doc comment. */
+	aspectRatio?: AspectRatio | null;
 }
 
 /** Mirrors Rust `commands::RenderResult`, returned by `svg_render_session_mux`. */

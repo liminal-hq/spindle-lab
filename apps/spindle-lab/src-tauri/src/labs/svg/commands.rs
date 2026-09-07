@@ -104,7 +104,13 @@ pub fn svg_render_session_mux(
         output_path.clone()
     };
 
-    let mux_command = build_mux_command(&frames_dir, &options, &single_loop_path);
+    let mux_command = build_mux_command(
+        &frames_dir,
+        &options,
+        request.width,
+        request.height,
+        &single_loop_path,
+    )?;
     let mut log = run_ffmpeg_with_progress(
         &app,
         &session_id,

@@ -19,7 +19,7 @@
 import { writeFile } from '@tauri-apps/plugin-fs';
 import { bakeCssAtTime } from './bake-css';
 import { bakeSmilAtTime } from './bake-smil';
-import { rasteriseSvg } from './rasterise';
+import { rasteriseSvg, type FitMode } from './rasterise';
 import { frameTimeSeconds, type Fps, type LoopMode } from './timeline';
 
 /**
@@ -65,6 +65,8 @@ export interface CaptureOptions {
 	width: number;
 	height: number;
 	background: 'transparent' | string;
+	/** `'fit'` (letterbox) or `'stretch'` (fill), per `rasterise.ts`'s `FitMode`. */
+	fitMode: FitMode;
 	/** Called after each frame is written, with the count so far and the total. */
 	onProgress: (framesDone: number, frameTotal: number) => void;
 	/** Checked before every frame; returning `true` stops the loop early. */
@@ -94,6 +96,7 @@ export async function runCaptureLoop(options: CaptureOptions): Promise<CaptureOu
 		width,
 		height,
 		background,
+		fitMode,
 		onProgress,
 		isCancelled,
 	} = options;
@@ -115,7 +118,7 @@ export async function runCaptureLoop(options: CaptureOptions): Promise<CaptureOu
 			text = bakeSmilAtTime(text, t);
 		}
 
-		const blob = await rasteriseSvg(text, { width, height, background });
+		const blob = await rasteriseSvg(text, { width, height, background, fitMode });
 		const bytes = new Uint8Array(await blob.arrayBuffer());
 		await writeFile(frameFileName(framesDir, index), bytes);
 
