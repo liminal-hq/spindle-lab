@@ -1,0 +1,64 @@
+.export-settings-panel__row {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--space-3);
+	margin-bottom: var(--space-3);
+}
+
+.export-settings-panel__row:last-child {
+	margin-bottom: 0;
+}
+
+.export-settings-panel__field {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	font-size: var(--text-sm);
+	color: var(--text-secondary);
+}
+
+.export-settings-panel__field input[type='number'] {
+	width: 5.5rem;
+	font-family: var(--font-mono);
+}
+
+.export-settings-panel__field input,
+.export-settings-panel__field select {
+	background: var(--bg-card);
+	color: var(--text-primary);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-sm);
+	padding: var(--space-1) var(--space-2);
+	font-size: var(--text-sm);
+}
+
+.export-settings-panel__badge {
+	font-size: var(--text-xs);
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.export-settings-panel__custom-resolution {
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+	font-family: var(--font-mono);
+}
+
+.export-settings-panel__custom-resolution input {
+	width: 4.5rem;
+	background: var(--bg-card);
+	color: var(--text-primary);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-sm);
+	padding: var(--space-1) var(--space-2);
+	font-size: var(--text-sm);
+}
+
+.export-settings-panel__hint {
+	color: var(--colour-warning);
+	font-size: var(--text-xs);
+	margin-top: var(--space-2);
+}

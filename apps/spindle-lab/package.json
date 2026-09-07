@@ -8,6 +8,7 @@
 		"build": "tsc && vite build",
 		"preview": "vite preview",
 		"tauri": "tauri",
+		"tauri:debug": "SPINDLE_LAB_MCP_BRIDGE=1 tauri dev --config src-tauri/tauri.dev.conf.json",
 		"test": "vitest run",
 		"test:ci": "mkdir -p ../../test-results/spindle-lab && vitest run --reporter=default --reporter=junit --outputFile.junit=../../test-results/spindle-lab/junit.xml",
 		"test:watch": "vitest",

@@ -15,6 +15,24 @@ pub enum Error {
 
     #[error("JSON serialisation error: {0}")]
     Json(#[from] serde_json::Error),
+
+    #[error("XML parsing error: {0}")]
+    Xml(#[from] quick_xml::Error),
+
+    #[error("{0}")]
+    InvalidSvg(String),
+
+    #[error(transparent)]
+    Tauri(#[from] tauri::Error),
+
+    #[error("ffmpeg error: {0}")]
+    Ffmpeg(String),
+
+    #[error("Render cancelled by user.")]
+    Cancelled,
+
+    #[error("Unknown render session '{0}'.")]
+    SessionNotFound(String),
 }
 
 impl Serialize for Error {

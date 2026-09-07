@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+	<!-- SMIL animateTransform: an infinite rotation around the square's centre. -->
+	<rect x="35" y="35" width="30" height="30" fill="#60a5fa">
+		<animateTransform
+			attributeName="transform"
+			type="rotate"
+			from="0 50 50"
+			to="360 50 50"
+			dur="2s"
+			repeatCount="indefinite"
+		/>
+	</rect>
+</svg>
